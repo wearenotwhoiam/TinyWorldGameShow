@@ -4,14 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "GameShowContestantBase.generated.h"
+#include "ContestantBaseCharacter.generated.h"
 
 UCLASS()
-class TINYWORLDGAMESHOW_API AGameShowContestantBase : public ACharacter
+class TINYWORLDGAMESHOW_API AContestantBaseCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this character's properties
-	AGameShowContestantBase();
+	AContestantBaseCharacter();
 };

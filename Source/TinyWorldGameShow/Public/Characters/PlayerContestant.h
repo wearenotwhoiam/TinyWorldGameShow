@@ -3,15 +3,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Characters/GameShowContestantBase.h"
+#include "Characters/ContestantBaseCharacter.h"
 #include "PlayerContestant.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class TINYWORLDGAMESHOW_API APlayerContestant : public AGameShowContestantBase
+class TINYWORLDGAMESHOW_API APlayerContestant : public AContestantBaseCharacter
 {
 	GENERATED_BODY()
+
+protected:
+	virtual void BeginPlay() override;
 	
 };
