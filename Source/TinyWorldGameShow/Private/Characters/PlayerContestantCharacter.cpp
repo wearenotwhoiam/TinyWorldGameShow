@@ -55,7 +55,6 @@ void  APlayerContestantCharacter::SetupPlayerInputComponent(class UInputComponen
 void APlayerContestantCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	Debug::Print(TEXT("Begun"));
 }
 
 void APlayerContestantCharacter::Input_Move(const FInputActionValue& InputActionValue)
