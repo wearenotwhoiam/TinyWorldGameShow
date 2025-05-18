@@ -14,7 +14,7 @@
 
 APlayerContestantCharacter::APlayerContestantCharacter()
 {
-	GetCapsuleComponent()->InitCapsuleSize(42.f, 100.f);
+	GetCapsuleComponent()->InitCapsuleSize(120.f, 100.f);
 
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
