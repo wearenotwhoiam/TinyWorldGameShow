@@ -4,6 +4,8 @@
 
 #include "Characters/ContestantBaseCharacter.h"
 #include "CoreMinimal.h"
+#include "Interfaces/OnlineSessionInterface.h"
+
 #include "PlayerContestantCharacter.generated.h"
 
 class USpringArmComponent;
@@ -20,13 +22,16 @@ class TINYWORLDGAMESHOW_API APlayerContestantCharacter : public AContestantBaseC
 public:
 	APlayerContestantCharacter();
 
+	IOnlineSessionPtr OnlineSessionInterface;
 protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void BeginPlay() override;
 
+	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
+	void OnFindSessionComplete(bool bWasSuccessful);
+
 private:
 #pragma region Components
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	USpringArmComponent* CameraBoom;
 
@@ -35,7 +40,6 @@ private:
 #pragma endregion
 
 #pragma region Inputs
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CharacterData", meta = (AllowPrivateAccess = "true"))
 	UDataAsset_InputConfig* InputConfigDataAsset;
 
@@ -45,5 +49,15 @@ private:
 	void Input_OpenLobby(const FInputActionValue& InputActionValue);
 	void Input_CallOpenLevel(const FInputActionValue& InputActionValue);
 	void Input_CallClientTravel(const FInputActionValue& InputActionValue);
+
+	void Input_CreateGameSession(const FInputActionValue& InputActionValue);
+	void Input_JoinGameSession(const FInputActionValue& InputActionValue);
 #pragma endregion
+
+#pragma region Delegates
+	FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
+	FOnFindSessionsCompleteDelegate FindSessionCompleteDelegate;
+#pragma endregion
+
+	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 };

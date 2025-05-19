@@ -11,4 +11,7 @@ namespace ContestantGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_OpenLobby, "InputTag.OpenLobby");
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_CallOpenLevel, "InputTag.CallOpenLevel");
 	UE_DEFINE_GAMEPLAY_TAG(InputTag_CallClientTravel, "InputTag.CallClientTravel");
+	UE_DEFINE_GAMEPLAY_TAG(InputTag_CreateGameSession, "InputTag.CreateGameSession");
+	UE_DEFINE_GAMEPLAY_TAG(InputTag_JoinGameSession, "InputTag.JoinGameSession");
+
 }
