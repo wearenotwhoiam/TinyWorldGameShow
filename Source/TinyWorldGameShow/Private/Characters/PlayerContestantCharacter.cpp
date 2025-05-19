@@ -10,6 +10,7 @@
 #include "Components/Input/ContestantInputComponent.h"
 #include "ContestantGameplayTags.h"
 
+#include "Kismet/GameplayStatics.h"
 #include "ContestantDebugHelper.h"
 
 APlayerContestantCharacter::APlayerContestantCharacter()
@@ -34,7 +35,9 @@ APlayerContestantCharacter::APlayerContestantCharacter()
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
 	GetCharacterMovement()->MaxWalkSpeed = 400.f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
+
 }
+
 
 void  APlayerContestantCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
@@ -50,6 +53,10 @@ void  APlayerContestantCharacter::SetupPlayerInputComponent(class UInputComponen
 	UContestantInputComponent* ContestantInputComponent{ CastChecked<UContestantInputComponent>(PlayerInputComponent) };
 	ContestantInputComponent->BindNativeInputAction(InputConfigDataAsset, ContestantGameplayTags::InputTag_Move, ETriggerEvent::Triggered, this, &ThisClass::Input_Move);
 	ContestantInputComponent->BindNativeInputAction(InputConfigDataAsset, ContestantGameplayTags::InputTag_Look, ETriggerEvent::Triggered, this, &ThisClass::Input_Look);
+
+	ContestantInputComponent->BindNativeInputAction(InputConfigDataAsset, ContestantGameplayTags::InputTag_OpenLobby, ETriggerEvent::Triggered, this, &ThisClass::Input_OpenLobby);
+	ContestantInputComponent->BindNativeInputAction(InputConfigDataAsset, ContestantGameplayTags::InputTag_CallOpenLevel, ETriggerEvent::Triggered, this, &ThisClass::Input_CallOpenLevel);
+	ContestantInputComponent->BindNativeInputAction(InputConfigDataAsset, ContestantGameplayTags::InputTag_CallClientTravel, ETriggerEvent::Triggered, this, &ThisClass::Input_CallClientTravel);
 }
 
 void APlayerContestantCharacter::BeginPlay()
@@ -88,4 +95,31 @@ void APlayerContestantCharacter::Input_Look(const FInputActionValue& InputAction
 	{
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+
+void APlayerContestantCharacter::Input_OpenLobby(const FInputActionValue& InputActionValue)
+{
+	Debug::Print(TEXT("OpenLobby"));
+
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		World->ServerTravel("/Game/Content/Maps/FeatureDevMap?listen");
+	}
+}
+
+void APlayerContestantCharacter::Input_CallOpenLevel(const FInputActionValue& InputActionValue)
+{
+	Debug::Print(TEXT("CallOpenLevel"));
+	UGameplayStatics::OpenLevel(this, "192.168.1.91");
+}
+
+void APlayerContestantCharacter::Input_CallClientTravel(const FInputActionValue& InputActionValue)
+{
+	Debug::Print(TEXT("CallClientTravel"));
+
+	APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController();
+	if (!PlayerController) return;
+
+	PlayerController->ClientTravel("192.168.1.91", ETravelType::TRAVEL_Absolute);
 }
