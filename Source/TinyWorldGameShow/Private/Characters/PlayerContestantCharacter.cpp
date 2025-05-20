@@ -23,7 +23,8 @@
 
 APlayerContestantCharacter::APlayerContestantCharacter() : 
 	CreateSessionCompleteDelegate(FOnCreateSessionCompleteDelegate::CreateUObject(this,&ThisClass::OnCreateSessionComplete)),
-	FindSessionCompleteDelegate(FOnFindSessionsCompleteDelegate::CreateUObject(this,&ThisClass::OnFindSessionComplete))
+	FindSessionCompleteDelegate(FOnFindSessionsCompleteDelegate::CreateUObject(this,&ThisClass::OnFindSessionComplete)),
+	JoinSessionCompleteDelegate(FOnJoinSessionCompleteDelegate::CreateUObject(this,&ThisClass::OnJoinSessionComplete))
 {
 	GetCapsuleComponent()->InitCapsuleSize(120.f, 100.f);
 
@@ -74,10 +75,6 @@ void  APlayerContestantCharacter::SetupPlayerInputComponent(class UInputComponen
 	UContestantInputComponent* ContestantInputComponent{ CastChecked<UContestantInputComponent>(PlayerInputComponent) };
 	ContestantInputComponent->BindNativeInputAction(InputConfigDataAsset, ContestantGameplayTags::InputTag_Move, ETriggerEvent::Triggered, this, &ThisClass::Input_Move);
 	ContestantInputComponent->BindNativeInputAction(InputConfigDataAsset, ContestantGameplayTags::InputTag_Look, ETriggerEvent::Triggered, this, &ThisClass::Input_Look);
-
-	ContestantInputComponent->BindNativeInputAction(InputConfigDataAsset, ContestantGameplayTags::InputTag_OpenLobby, ETriggerEvent::Started, this, &ThisClass::Input_OpenLobby);
-	ContestantInputComponent->BindNativeInputAction(InputConfigDataAsset, ContestantGameplayTags::InputTag_CallOpenLevel, ETriggerEvent::Started, this, &ThisClass::Input_CallOpenLevel);
-	ContestantInputComponent->BindNativeInputAction(InputConfigDataAsset, ContestantGameplayTags::InputTag_CallClientTravel, ETriggerEvent::Started, this, &ThisClass::Input_CallClientTravel);
 	ContestantInputComponent->BindNativeInputAction(InputConfigDataAsset, ContestantGameplayTags::InputTag_CreateGameSession, ETriggerEvent::Started, this, &ThisClass::Input_CreateGameSession);
 	ContestantInputComponent->BindNativeInputAction(InputConfigDataAsset, ContestantGameplayTags::InputTag_JoinGameSession, ETriggerEvent::Started, this, &ThisClass::Input_JoinGameSession);
 }
@@ -121,33 +118,6 @@ void APlayerContestantCharacter::Input_Look(const FInputActionValue& InputAction
 	}
 }
 
-void APlayerContestantCharacter::Input_OpenLobby(const FInputActionValue& InputActionValue)
-{
-	Debug::Print(TEXT("OpenLobby"));
-
-	UWorld* World = GetWorld();
-	if (World)
-	{
-		World->ServerTravel("/Game/Content/Maps/FeatureDevMap?listen");
-	}
-}
-
-void APlayerContestantCharacter::Input_CallOpenLevel(const FInputActionValue& InputActionValue)
-{
-	Debug::Print(TEXT("CallOpenLevel"));
-	UGameplayStatics::OpenLevel(this, "192.168.1.91");
-}
-
-void APlayerContestantCharacter::Input_CallClientTravel(const FInputActionValue& InputActionValue)
-{
-	Debug::Print(TEXT("CallClientTravel"));
-
-	APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController();
-	if (!PlayerController) return;
-
-	PlayerController->ClientTravel("192.168.1.91", ETravelType::TRAVEL_Absolute);
-}
-
 void APlayerContestantCharacter::Input_CreateGameSession(const FInputActionValue& InputActionValue)
 {
 	if (!OnlineSessionInterface.IsValid()) return;
@@ -170,6 +140,7 @@ void APlayerContestantCharacter::Input_CreateGameSession(const FInputActionValue
 	SessionSettings->bShouldAdvertise = true;
 	SessionSettings->bUsesPresence = true;
 	SessionSettings->bUseLobbiesIfAvailable = true;
+	SessionSettings->Set(FName("MatchType"), FString("MiniGames"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	OnlineSessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, *SessionSettings);
@@ -179,16 +150,14 @@ void APlayerContestantCharacter::Input_JoinGameSession(const FInputActionValue& 
 {
 	if (!OnlineSessionInterface.IsValid()) return;
 
-	Debug::Print(TEXT("JoinSession"));
-
 	OnlineSessionInterface->AddOnFindSessionsCompleteDelegate_Handle(FindSessionCompleteDelegate);
 
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
 	SessionSearch->MaxSearchResults = 10000;
 	SessionSearch->bIsLanQuery = false;
 	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
-	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 
+	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	OnlineSessionInterface->FindSessions(*LocalPlayer->GetPreferredUniqueNetId(), SessionSearch.ToSharedRef());
 }
 #pragma endregion
@@ -207,7 +176,8 @@ void APlayerContestantCharacter::OnCreateSessionComplete(FName SessionName, bool
 		UWorld* World = GetWorld();
 		if (World)
 		{
-			World->ServerTravel("/Game/Content/Maps/LobbyLevel?listen");
+			Debug::Print(TEXT("Should Travel"));
+			World->ServerTravel("Game/Maps/Lobby?listen");
 		}
 	}
 	else
@@ -218,17 +188,53 @@ void APlayerContestantCharacter::OnCreateSessionComplete(FName SessionName, bool
 
 void APlayerContestantCharacter::OnFindSessionComplete(bool bWasSuccessful)
 {
-	Debug::Print(TEXT("FindSessionComplete"));
+	if (!OnlineSessionInterface.IsValid()) return;
+
 	for (auto Session : SessionSearch->SearchResults)
 	{
-		Debug::Print(TEXT("Session"));
 		FString ID = Session.GetSessionIdStr();
 		FString User = Session.Session.OwningUserName;
-
+		FString MatchType;
+		Session.Session.SessionSettings.Get(FName("MatchType"), MatchType);
 		if (GEngine)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Cyan, FString::Printf(TEXT("ID: %s, User: %s"), *ID, *User));
 		}
+		if (MatchType == FString("MiniGames"))
+		{
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Red, FString::Printf(TEXT("Joining Match Type: %s"), *MatchType));
+			}
+
+			OnlineSessionInterface->AddOnJoinSessionCompleteDelegate_Handle(JoinSessionCompleteDelegate);
+
+			Session.Session.SessionSettings.bUseLobbiesIfAvailable = true;
+			Session.Session.SessionSettings.bUsesPresence = true;
+
+			const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+			OnlineSessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, Session);
+		}
+	}
+}
+
+void APlayerContestantCharacter::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
+{
+	if (!OnlineSessionInterface.IsValid()) return;
+	FString Address;
+	Debug::Print(TEXT("hmmm"));
+	if (OnlineSessionInterface->GetResolvedConnectString(NAME_GameSession, Address))
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Yellow, FString::Printf(TEXT("Address: %s"), *Address));
+		}
+
+		APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController();
+		if (!PlayerController) return;
+
+		PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
+		Debug::Print(TEXT("GOGOGOGOGO"));
 	}
 }
 #pragma endregion

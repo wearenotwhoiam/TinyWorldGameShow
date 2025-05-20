@@ -29,7 +29,7 @@ protected:
 
 	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
 	void OnFindSessionComplete(bool bWasSuccessful);
-
+	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 private:
 #pragma region Components
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
@@ -46,10 +46,6 @@ private:
 	void Input_Move(const FInputActionValue& InputActionValue);
 	void Input_Look(const FInputActionValue& InputActionValue);
 
-	void Input_OpenLobby(const FInputActionValue& InputActionValue);
-	void Input_CallOpenLevel(const FInputActionValue& InputActionValue);
-	void Input_CallClientTravel(const FInputActionValue& InputActionValue);
-
 	void Input_CreateGameSession(const FInputActionValue& InputActionValue);
 	void Input_JoinGameSession(const FInputActionValue& InputActionValue);
 #pragma endregion
@@ -57,6 +53,7 @@ private:
 #pragma region Delegates
 	FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
 	FOnFindSessionsCompleteDelegate FindSessionCompleteDelegate;
+	FOnJoinSessionCompleteDelegate JoinSessionCompleteDelegate;
 #pragma endregion
 
 	TSharedPtr<FOnlineSessionSearch> SessionSearch;
