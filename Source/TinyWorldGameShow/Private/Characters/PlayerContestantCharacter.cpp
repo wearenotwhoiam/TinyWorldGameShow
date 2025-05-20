@@ -177,7 +177,7 @@ void APlayerContestantCharacter::OnCreateSessionComplete(FName SessionName, bool
 		if (World)
 		{
 			Debug::Print(TEXT("Should Travel"));
-			World->ServerTravel("Game/Maps/Lobby?listen");
+			World->ServerTravel("Lobby?listen");
 		}
 	}
 	else
