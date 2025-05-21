@@ -4,8 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "MainMenu.generated.h"
-
 /**
  * 
  */
@@ -16,7 +16,7 @@ class MULTIPLAYERSESSIONS_API UMainMenu : public UUserWidget
 
 public:
 	UFUNCTION(BlueprintCallable)
-	void MenuSetup(int32 NumPublicPlayers = 4, FString TypeOfMatch = "MiniGames");
+	void MenuSetup(int32 NumPublicPlayers = 4, FString TypeOfMatch = "MiniGames", FString LobbyPath = FString(TEXT("Lobby")));
 
 protected:
 
@@ -25,6 +25,14 @@ protected:
 
 	UFUNCTION()
 	void OnCreateSession(bool bWasSuccessful);
+	void OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful);
+	void OnJoinSession(EOnJoinSessionCompleteResult::Type Result);
+
+	UFUNCTION()
+	void OnDestroySession(bool bWasSuccessful);
+	UFUNCTION()
+	void OnStartSession(bool bWasSuccessful);
+
 private:
 	UPROPERTY(meta = (BindWidget))
 	class UButton* HostButton;
@@ -43,4 +51,6 @@ private:
 
 	int32 NumPublicConnections{ 4 };
 	FString MatchType{ TEXT("MiniGames") };
+
+	FString PathToLobby{ TEXT("") };
 };

@@ -4,9 +4,13 @@
 #include "MainMenu.h"
 #include "Components/Button.h"
 #include "MultiplayerSessionsSubsystem.h"
+#include "OnlineSessionSettings.h"
+#include "OnlineSubsystem.h"
 
-void UMainMenu::MenuSetup(int32 NumPublicPlayers, FString TypeOfMatch)
+void UMainMenu::MenuSetup(int32 NumPublicPlayers, FString TypeOfMatch, FString LobbyPath)
 {
+	PathToLobby = FString::Printf(TEXT("%s?listen"), *LobbyPath);
+
 	NumPublicConnections = NumPublicPlayers;
 	MatchType = TypeOfMatch;
 
@@ -36,8 +40,11 @@ void UMainMenu::MenuSetup(int32 NumPublicPlayers, FString TypeOfMatch)
 	if (MultiplayerSessionsSubsystem)
 	{
 		MultiplayerSessionsSubsystem->MultiplayerOnCreateSessionComplete.AddDynamic(this, &ThisClass::OnCreateSession);
+		MultiplayerSessionsSubsystem->MultiplayerOnFindSessionComplete.AddUObject(this, &ThisClass::OnFindSessions);
+		MultiplayerSessionsSubsystem->MultiplayerOnJoinSessionComplete.AddUObject(this, &ThisClass::OnJoinSession);
+		MultiplayerSessionsSubsystem->MultiplayerOnDestroySessionComplete.AddDynamic(this, &ThisClass::OnDestroySession);
+		MultiplayerSessionsSubsystem->MultiplayerOnStartSessionComplete.AddDynamic(this, &ThisClass::OnStartSession);
 	}
-
 }
 
 bool UMainMenu::Initialize()
@@ -57,8 +64,82 @@ bool UMainMenu::Initialize()
 	return true;
 }
 
+
+void UMainMenu::NativeDestruct()
+{
+	MenuTearDown();
+
+	Super::NativeDestruct();
+}
+
+void UMainMenu::OnCreateSession(bool bWasSuccessful)
+{
+	if (bWasSuccessful)
+	{
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			World->ServerTravel(PathToLobby);
+		}
+	}
+	else
+	{
+		HostButton->SetIsEnabled(true);
+	}
+}
+
+void UMainMenu::OnFindSessions(const TArray<FOnlineSessionSearchResult>& SessionResults, bool bWasSuccessful)
+{
+	if (MultiplayerSessionsSubsystem == nullptr) return;
+
+	for (auto Result : SessionResults)
+	{
+		FString SettingsValue;
+		Result.Session.SessionSettings.Get(FName("MatchType"), SettingsValue);
+		if (SettingsValue == MatchType)
+		{
+			MultiplayerSessionsSubsystem->JoinSession(Result);
+			return;
+		}
+	}
+	if (!bWasSuccessful || SessionResults.Num() == 0)
+	{
+		JoinButton->SetIsEnabled(true);
+	}
+}
+
+void UMainMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type Result)
+{
+	IOnlineSubsystem* Subsystem = IOnlineSubsystem::Get();
+	if (Subsystem)
+	{
+		IOnlineSessionPtr SessionInterface = Subsystem->GetSessionInterface();
+
+		if (!SessionInterface.IsValid()) return;
+		FString Address;
+		if (SessionInterface->GetResolvedConnectString(NAME_GameSession, Address))
+		{
+			APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController();
+			if (!PlayerController) return;
+			PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
+		}
+	}
+	if (Result != EOnJoinSessionCompleteResult::Success)
+	{
+		JoinButton->SetIsEnabled(true);
+	}
+}
+void UMainMenu::OnDestroySession(bool bWasSuccessful)
+{
+}
+
+void UMainMenu::OnStartSession(bool bWasSuccessful)
+{
+}
+
 void UMainMenu::HostButtonClicked()
 {
+	HostButton->SetIsEnabled(false);
 	if (MultiplayerSessionsSubsystem)
 	{
 		MultiplayerSessionsSubsystem->CreateSession(NumPublicConnections, MatchType);
@@ -67,14 +148,11 @@ void UMainMenu::HostButtonClicked()
 
 void UMainMenu::JoinButtonClicked()
 {
-	if (GEngine)
+	JoinButton->SetIsEnabled(false);
+	if (MultiplayerSessionsSubsystem)
 	{
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			15.f,
-			FColor::Green,
-			FString(TEXT("Join"))
-		);
+		MultiplayerSessionsSubsystem->FindSessions(10000);
+
 	}
 }
 
@@ -91,29 +169,4 @@ void UMainMenu::MenuTearDown()
 	FInputModeGameOnly InputModeData;
 	PlayerController->SetInputMode(InputModeData);
 	PlayerController->SetShowMouseCursor(false);
-}
-void UMainMenu::NativeDestruct()
-{
-	MenuTearDown();
-
-	Super::NativeDestruct();
-}
-
-void UMainMenu::OnCreateSession(bool bWasSuccessful)
-{
-	if (bWasSuccessful)
-	{
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			15.f,
-			FColor::Green,
-			FString(TEXT("Created a session"))
-		);
-
-		UWorld* World = GetWorld();
-		if (World)
-		{
-			World->ServerTravel("Lobby?listen");
-		}
-	}
 }

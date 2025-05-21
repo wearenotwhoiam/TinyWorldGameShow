@@ -27,9 +27,6 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void BeginPlay() override;
 
-	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
-	void OnFindSessionComplete(bool bWasSuccessful);
-	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 private:
 #pragma region Components
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
@@ -39,22 +36,9 @@ private:
 	UCameraComponent* FollowCamera;
 #pragma endregion
 
-#pragma region Inputs
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "CharacterData", meta = (AllowPrivateAccess = "true"))
 	UDataAsset_InputConfig* InputConfigDataAsset;
 
 	void Input_Move(const FInputActionValue& InputActionValue);
 	void Input_Look(const FInputActionValue& InputActionValue);
-
-	void Input_CreateGameSession(const FInputActionValue& InputActionValue);
-	void Input_JoinGameSession(const FInputActionValue& InputActionValue);
-#pragma endregion
-
-#pragma region Delegates
-	FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
-	FOnFindSessionsCompleteDelegate FindSessionCompleteDelegate;
-	FOnJoinSessionCompleteDelegate JoinSessionCompleteDelegate;
-#pragma endregion
-
-	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 };
