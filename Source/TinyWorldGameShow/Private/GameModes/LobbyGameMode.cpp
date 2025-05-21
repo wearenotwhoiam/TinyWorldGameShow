@@ -35,6 +35,16 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 				FString::Printf(TEXT("%s has joind the game"), *PlayerName)
 			);
 		}
+
+		if (NumberOfPlayers == 2)
+		{
+			UWorld* World = GetWorld();
+			if (World)
+			{
+				bUseSeamlessTravel = true;
+				World->ServerTravel(FString("/Game/Maps/WaterTest?listen"));
+			}
+		}
 	}
 }
 

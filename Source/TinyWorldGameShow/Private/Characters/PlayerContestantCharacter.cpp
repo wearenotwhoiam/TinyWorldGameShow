@@ -20,6 +20,8 @@
 #include "Online/OnlineSessionNames.h"
 #include "ContestantDebugHelper.h"
 
+#include "Components/WidgetComponent.h"
+
 
 APlayerContestantCharacter::APlayerContestantCharacter()
 {
@@ -48,7 +50,8 @@ APlayerContestantCharacter::APlayerContestantCharacter()
 	if (!OnlineSubsystem) return;
 	OnlineSessionInterface = OnlineSubsystem->GetSessionInterface();
 
-	
+	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
+	OverheadWidget->SetupAttachment(RootComponent);
 	//if (GEngine)
 	//{
 	//	GEngine->AddOnScreenDebugMessage(
