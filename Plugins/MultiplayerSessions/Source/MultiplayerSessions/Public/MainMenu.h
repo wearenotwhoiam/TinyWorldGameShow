@@ -16,5 +16,31 @@ class MULTIPLAYERSESSIONS_API UMainMenu : public UUserWidget
 
 public:
 	UFUNCTION(BlueprintCallable)
-	void MenuSetup();
+	void MenuSetup(int32 NumPublicPlayers = 4, FString TypeOfMatch = "MiniGames");
+
+protected:
+
+	virtual bool Initialize() override;
+	virtual void NativeDestruct() override;
+
+	UFUNCTION()
+	void OnCreateSession(bool bWasSuccessful);
+private:
+	UPROPERTY(meta = (BindWidget))
+	class UButton* HostButton;
+
+	UPROPERTY(meta = (BindWidget))
+	UButton* JoinButton;
+
+	UFUNCTION()
+	void HostButtonClicked();
+	UFUNCTION()
+	void JoinButtonClicked();
+
+	void MenuTearDown();
+
+	class UMultiplayerSessionsSubsystem* MultiplayerSessionsSubsystem;
+
+	int32 NumPublicConnections{ 4 };
+	FString MatchType{ TEXT("MiniGames") };
 };
