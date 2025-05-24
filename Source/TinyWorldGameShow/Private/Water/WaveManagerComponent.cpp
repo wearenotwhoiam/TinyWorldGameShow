@@ -6,11 +6,11 @@
 #include "Materials/MaterialParameterCollection.h"
 #include "Kismet/KismetMaterialLibrary.h"
 
+#include "ContestantDebugHelper.h"
+
 // Sets default values for this component's properties
 UWaveManagerComponent::UWaveManagerComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
@@ -19,10 +19,7 @@ UWaveManagerComponent::UWaveManagerComponent()
 void UWaveManagerComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
-
-
 // Called every frame
 void UWaveManagerComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
@@ -34,6 +31,11 @@ void UWaveManagerComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 
 float UWaveManagerComponent::GetWaveHeightAt(FVector2D WorldPosition, float Time) const
 {
+    if (Waves.Num() == 0)
+    {
+        Debug::Print(TEXT("No waves defined! Returning 0.f"));
+        return 0.f;
+    }
     float TotalHeight = 0.f;
 
     for (const FWaveConfig& Wave : Waves)
