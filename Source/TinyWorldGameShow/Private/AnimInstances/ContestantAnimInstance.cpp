@@ -19,6 +19,6 @@ void UContestantAnimInstance::NativeThreadSafeUpdateAnimation(float DelatSeconds
 	
 	GroundSpeed = OwningCharacter->GetVelocity().Size2D();
 
-	bHasAcceleration = OwningMovementComponent->GetCurrentAcceleration().SizeSquared2D() > 0.f;
-	
+	bInAir = OwningCharacter->GetCharacterMovement()->IsFalling();
+	bAccelerating = OwningMovementComponent->GetCurrentAcceleration().SizeSquared2D() > 0.f;
 }

@@ -29,5 +29,8 @@ protected:
 	float GroundSpeed;
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "AnimData|Locomotion")
-	bool bHasAcceleration;
+	bool bAccelerating;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "AnimData|Locomotion")
+	bool bInAir;
 };
